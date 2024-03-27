@@ -1,12 +1,17 @@
 import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service';
+import { Role } from '@prisma/client';
+import { IsRole } from './decorators/role.decorator';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
-
-  @Get()
+  @Get('sample')
   getHello(): string {
-    return this.appService.getHello();
+    return 'Hello User!';
+  }
+
+  @IsRole(Role.ADMIN)
+  @Get('admin-sample')
+  getAdminHello(): string {
+    return 'Hello Admin!';
   }
 }
