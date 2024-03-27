@@ -4,6 +4,8 @@ import { LocalAuthGuard } from './guards/local.guard';
 import { Public } from 'src/decorators/public.decorator';
 import ResponseDto from '../constants/response.dto';
 import { RefreshAccessTokenRequestDto } from './dtos/refresh-access-token-request.dto';
+import { RegisterRequestDto } from './dtos/register-request.dto';
+import { Message } from '../constants/message';
 
 @Public()
 @Controller('auth')
@@ -14,6 +16,12 @@ export class AuthController {
   @Post('/login')
   async login(@Request() req: any) {
     return ResponseDto.successDefault(await this.authService.login(req.user));
+  }
+
+  @Post('/register')
+  async register(@Body() registerRequestDto: RegisterRequestDto) {
+    await this.authService.register(registerRequestDto);
+    return ResponseDto.successWithoutData(Message.USER_CREATED_SUCCESSFULLY);
   }
 
   @Post('/refresh-token')

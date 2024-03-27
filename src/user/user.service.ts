@@ -2,12 +2,12 @@ import * as bcrypt from 'bcrypt';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { User } from '@prisma/client';
-import { CreateUserDto } from './dtos/create-user.dto';
+import { RegisterRequestDto } from '../auth/dtos/register-request.dto';
 
 interface IUserService {
   getUsers(): Promise<User[]>;
   getUser(username: string): Promise<User | null>;
-  createUser(data: CreateUserDto): Promise<void>;
+  createUser(data: RegisterRequestDto): Promise<void>;
 }
 
 @Injectable()
@@ -26,7 +26,7 @@ export class UserService implements IUserService {
     });
   }
 
-  async createUser(data: CreateUserDto) {
+  async createUser(data: RegisterRequestDto) {
     const { username, password } = data;
 
     const user = await this.prisma.user.findUnique({ where: { username } });
