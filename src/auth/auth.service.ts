@@ -10,12 +10,14 @@ import * as crypto from 'crypto';
 import { LoginResponseDto } from './dtos/login-response.dto';
 import { RefreshAccessTokenRequestDto } from './dtos/refresh-access-token-request.dto';
 import { RefreshAccessTokenResponseDto } from './dtos/refresh-access-token-response.dto';
+import { RegisterRequestDto } from './dtos/register-request.dto';
 
 const { createHash, randomBytes } = crypto;
 
 interface IAuthService {
   validateUser(username: string, password: string): Promise<User>;
   login(loginRequestDto: LoginRequestDto): Promise<LoginResponseDto>;
+  register(registerRequestDto: RegisterRequestDto): Promise<void>;
   refreshAccessToken(
     refreshAccessTokenRequestDto: RefreshAccessTokenRequestDto,
   ): Promise<RefreshAccessTokenResponseDto>;
@@ -28,6 +30,18 @@ export class AuthService implements IAuthService {
     private userService: UserService,
     private jwtService: JwtService,
   ) {}
+
+  async register(registerRequestDto: RegisterRequestDto): Promise<void> {
+    const { username } = registerRequestDto;
+
+    const existingUser = await this.userService.getUser(username);
+
+    if (existingUser) {
+      throw new BadRequestException(Message.USERNAME_TAKEN);
+    }
+
+    await this.userService.createUser(registerRequestDto);
+  }
 
   async validateUser(username: string, password: string) {
     const user = await this.userService.getUser(username);
