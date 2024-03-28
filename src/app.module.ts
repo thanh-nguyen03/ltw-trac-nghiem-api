@@ -4,6 +4,7 @@ import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
 import configuration from './common/constants/configuration';
 import { ContestModule } from './contest/contest.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { ContestModule } from './contest/contest.module';
       load: [configuration],
     }),
     AuthModule,
+    UserModule,
     ContestModule,
   ],
   controllers: [AppController],
