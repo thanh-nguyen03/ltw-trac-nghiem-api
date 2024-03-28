@@ -10,4 +10,7 @@ export class Message {
 
   // Contest
   static readonly CONTEST_NOT_FOUND = 'Contest not found';
+  static readonly QUESTION_OPTIONS_INVALID = 'Question options are invalid';
+  static readonly QUESTION_CORRECT_OPTIONS_INVALID =
+    'Question correct options are invalid';
 }
