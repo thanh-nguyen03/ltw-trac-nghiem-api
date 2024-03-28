@@ -7,4 +7,7 @@ export class Message {
   static readonly INVALID_REFRESH_TOKEN = 'Invalid refresh token';
   static readonly USERNAME_TAKEN = 'Username is already taken';
   static readonly USER_CREATED_SUCCESSFULLY = 'User created successfully';
+
+  // Contest
+  static readonly CONTEST_NOT_FOUND = 'Contest not found';
 }
