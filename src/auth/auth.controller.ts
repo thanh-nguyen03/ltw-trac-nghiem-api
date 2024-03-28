@@ -1,11 +1,11 @@
 import { Controller, Request, Post, UseGuards, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local.guard';
-import { Public } from 'src/decorators/public.decorator';
-import ResponseDto from '../constants/response.dto';
+import { Public } from 'src/common/decorators/public.decorator';
+import ResponseDto from '../common/constants/response.dto';
 import { RefreshAccessTokenRequestDto } from './dtos/refresh-access-token-request.dto';
 import { RegisterRequestDto } from './dtos/register-request.dto';
-import { Message } from '../constants/message';
+import { Message } from '../common/constants/message';
 
 @Public()
 @Controller('auth')

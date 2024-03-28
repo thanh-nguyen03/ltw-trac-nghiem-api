@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { Role } from '@prisma/client';
-import { IsRole } from './decorators/role.decorator';
+import { IsRole } from './common/decorators/role.decorator';
 
 @Controller()
 export class AppController {

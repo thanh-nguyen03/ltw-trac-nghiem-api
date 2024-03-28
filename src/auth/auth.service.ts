@@ -2,7 +2,7 @@ import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Message } from '../constants/message';
+import { Message } from '../common/constants/message';
 import { LoginRequestDto } from './dtos/login-request.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { User, UserToken } from '@prisma/client';
