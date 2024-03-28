@@ -41,13 +41,36 @@ model UserToken {
 }
 
 model Contest {
-  id          Int       @id @default(autoincrement())
+  id          Int        @id @default(autoincrement())
   name        String
   description String
   isFixTime   Boolean
   startTime   DateTime?
-  author      User      @relation(fields: [authorId], references: [id])
+  author      User       @relation(fields: [authorId], references: [id])
   authorId    Int
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now()) @updatedAt
+  questions   Question[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now()) @updatedAt
+}
+
+model Question {
+  id        Int              @id @default(autoincrement())
+  number    Int
+  content   String
+  contest   Contest          @relation(fields: [contestId], references: [id])
+  contestId Int
+  options   QuestionOption[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @default(now()) @updatedAt
+}
+
+model QuestionOption {
+  id         Int      @id @default(autoincrement())
+  number     Int
+  content    String
+  isCorrect  Boolean
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
 }

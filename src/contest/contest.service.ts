@@ -3,6 +3,7 @@ import { Contest } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Message } from '../common/constants/message';
+import { ContestQuestionInputDto } from './dtos/contest-question-input.dto';
 
 interface IContestService {
   findAll(): Promise<Contest[]>;
@@ -13,6 +14,12 @@ interface IContestService {
     updateContestDto: ContestDto,
   ): Promise<Contest>;
   deleteContest(contestId: number): Promise<Contest>;
+
+  // questions
+  saveQuestions(
+    contestId: number,
+    questions: ContestQuestionInputDto[],
+  ): Promise<Contest>;
 }
 
 @Injectable()
@@ -60,6 +67,7 @@ export class ContestService implements IContestService {
     return this.prisma.contest.findMany({
       include: {
         author: true,
+        questions: true,
       },
     });
   }
@@ -69,6 +77,56 @@ export class ContestService implements IContestService {
       where: { id },
       include: {
         author: true,
+        questions: true,
+      },
+    });
+  }
+
+  async saveQuestions(
+    contestId: number,
+    questions: ContestQuestionInputDto[],
+  ): Promise<Contest> {
+    const contest = await this.getContest(contestId);
+
+    if (!contest) {
+      throw new BadRequestException(Message.CONTEST_NOT_FOUND);
+    }
+
+    // Check if valid question options
+    questions.forEach((question) => {
+      if (question.options.length < 2) {
+        throw new BadRequestException(Message.QUESTION_OPTIONS_INVALID);
+      }
+
+      const correctOptions = question.options.filter(
+        (option) => option.isCorrect,
+      );
+
+      if (correctOptions.length !== 1) {
+        throw new BadRequestException(Message.QUESTION_CORRECT_OPTIONS_INVALID);
+      }
+    });
+
+    return this.prisma.contest.update({
+      where: { id: contestId },
+      data: {
+        questions: {
+          deleteMany: {},
+          create: questions.map((question) => ({
+            ...question,
+            options: {
+              create: question.options,
+            },
+          })),
+        },
+      },
+      include: {
+        author: true,
+        questions: {
+          include: {
+            options: true,
+          },
+        },
       },
     });
   }
