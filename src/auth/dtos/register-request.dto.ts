@@ -7,6 +7,10 @@ export class RegisterRequestDto {
 
   @IsString()
   @IsNotEmpty()
+  fullName: string;
+
+  @IsString()
+  @IsNotEmpty()
   @Min(6)
   password: string;
 }

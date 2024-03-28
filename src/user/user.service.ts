@@ -3,11 +3,15 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { User } from '@prisma/client';
 import { RegisterRequestDto } from '../auth/dtos/register-request.dto';
+import { Message } from '../common/constants/message';
+import { UpdateUserDto } from './dtos/update-user.dto';
 
 interface IUserService {
   getUsers(): Promise<User[]>;
   getUser(username: string): Promise<User | null>;
   createUser(data: RegisterRequestDto): Promise<void>;
+  updateUser(useId: number, data: UpdateUserDto): Promise<User>;
+  deleteUser(userId: number): Promise<void>;
 }
 
 @Injectable()
@@ -27,7 +31,7 @@ export class UserService implements IUserService {
   }
 
   async createUser(data: RegisterRequestDto) {
-    const { username, password } = data;
+    const { username, fullName, password } = data;
 
     const user = await this.prisma.user.findUnique({ where: { username } });
 
@@ -38,9 +42,35 @@ export class UserService implements IUserService {
     await this.prisma.user.create({
       data: {
         username,
+        fullName,
         password: bcrypt.hashSync(password, 10),
         role: 'USER',
       },
     });
+  }
+
+  async updateUser(userId: number, data: UpdateUserDto): Promise<User> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user) {
+      throw new BadRequestException(Message.USER_NOT_FOUND);
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...data,
+      },
+    });
+  }
+
+  async deleteUser(userId: number): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user) {
+      throw new BadRequestException(Message.USER_NOT_FOUND);
+    }
+
+    await this.prisma.user.delete({ where: { id: userId } });
   }
 }

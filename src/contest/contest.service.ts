@@ -26,13 +26,23 @@ interface IContestService {
 export class ContestService implements IContestService {
   constructor(private prisma: PrismaService) {}
 
-  createContest(createContestDto: ContestDto): Promise<Contest> {
+  async createContest(createContestDto: ContestDto): Promise<Contest> {
+    const { authorId } = createContestDto;
+
+    const author = await this.prisma.user.findUnique({
+      where: { id: authorId },
+    });
+
+    if (!author) {
+      throw new BadRequestException(Message.USER_NOT_FOUND);
+    }
+
     return this.prisma.contest.create({
       data: createContestDto,
     });
   }
 
-  updateContest(
+  async updateContest(
     contestId: number,
     updateContestDto: ContestDto,
   ): Promise<Contest> {
@@ -51,7 +61,7 @@ export class ContestService implements IContestService {
     });
   }
 
-  deleteContest(contestId: number): Promise<Contest> {
+  async deleteContest(contestId: number): Promise<Contest> {
     const contest = this.getContest(contestId);
 
     if (!contest) {
@@ -63,7 +73,7 @@ export class ContestService implements IContestService {
     });
   }
 
-  findAll(): Promise<Contest[]> {
+  async findAll(): Promise<Contest[]> {
     return this.prisma.contest.findMany({
       include: {
         author: true,
@@ -72,7 +82,7 @@ export class ContestService implements IContestService {
     });
   }
 
-  getContest(id: number): Promise<Contest> {
+  async getContest(id: number): Promise<Contest> {
     return this.prisma.contest.findUnique({
       where: { id },
       include: {

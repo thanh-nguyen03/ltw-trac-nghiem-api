@@ -21,6 +21,7 @@ enum Role {
 model User {
   id        Int         @id @default(autoincrement())
   username  String      @unique
+  fullName  String
   password  String
   role      Role
   tokens    UserToken[]
