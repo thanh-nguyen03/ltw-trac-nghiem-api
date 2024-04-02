@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseArrayPipe,
   ParseIntPipe,
   Post,
   Put,
@@ -11,9 +12,12 @@ import {
 import { ContestService } from './contest.service';
 import ResponseDto from '../common/constants/response.dto';
 import { ContestDto } from './dtos/contest.dto';
-import { ContestQuestionInputDto } from './dtos/contest-question-input.dto';
+import { ContestQuestionDto } from './dtos/contest-question.dto';
+import { IsRole } from '../common/decorators/role.decorator';
+import { Role } from '@prisma/client';
 
 @Controller('admin/contests')
+@IsRole(Role.ADMIN)
 export class AdminContestController {
   constructor(private contestService: ContestService) {}
 
@@ -24,7 +28,9 @@ export class AdminContestController {
 
   @Get(':id')
   async getContest(@Param('id', ParseIntPipe) id: number) {
-    return ResponseDto.successDefault(await this.contestService.getContest(id));
+    return ResponseDto.successDefault(
+      await this.contestService.getContestForAdmin(id),
+    );
   }
 
   @Post()
@@ -54,7 +60,8 @@ export class AdminContestController {
   @Post(':id/questions')
   async addQuestions(
     @Param('id', ParseIntPipe) contestId: number,
-    @Body() questions: ContestQuestionInputDto[],
+    @Body(new ParseArrayPipe({ items: ContestQuestionDto }))
+    questions: ContestQuestionDto[],
   ) {
     return ResponseDto.successDefault(
       await this.contestService.saveQuestions(contestId, questions),

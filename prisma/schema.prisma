@@ -19,15 +19,16 @@ enum Role {
 }
 
 model User {
-  id        Int         @id @default(autoincrement())
-  username  String      @unique
-  fullName  String
-  password  String
-  role      Role
-  tokens    UserToken[]
-  contests  Contest[]
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @default(now()) @updatedAt
+  id          Int          @id @default(autoincrement())
+  username    String       @unique
+  fullName    String
+  password    String
+  role        Role
+  tokens      UserToken[]
+  contests    Contest[]
+  submissions Submission[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now()) @updatedAt
 }
 
 model UserToken {
@@ -42,36 +43,67 @@ model UserToken {
 }
 
 model Contest {
-  id          Int        @id @default(autoincrement())
+  id          Int          @id @default(autoincrement())
   name        String
   description String
   isFixTime   Boolean
   startTime   DateTime?
-  author      User       @relation(fields: [authorId], references: [id])
+  author      User         @relation(fields: [authorId], references: [id])
   authorId    Int
   questions   Question[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @default(now()) @updatedAt
+  submissions Submission[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now()) @updatedAt
 }
 
 model Question {
-  id        Int              @id @default(autoincrement())
+  id        Int                @id @default(autoincrement())
   number    Int
   content   String
-  contest   Contest          @relation(fields: [contestId], references: [id])
+  score     Int                @default(1)
+  contest   Contest            @relation(fields: [contestId], references: [id])
   contestId Int
   options   QuestionOption[]
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @default(now()) @updatedAt
+  answers   SubmissionAnswer[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @default(now()) @updatedAt
 }
 
 model QuestionOption {
-  id         Int      @id @default(autoincrement())
+  id         Int                @id @default(autoincrement())
   number     Int
   content    String
   isCorrect  Boolean
-  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  question   Question           @relation(fields: [questionId], references: [id], onDelete: Cascade)
   questionId Int
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now()) @updatedAt
+  answers    SubmissionAnswer[]
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @default(now()) @updatedAt
+}
+
+model Submission {
+  id        Int                @id @default(autoincrement())
+  totalTime Int
+  score     Int?
+  user      User               @relation(fields: [userId], references: [id])
+  userId    Int
+  contest   Contest            @relation(fields: [contestId], references: [id])
+  contestId Int
+  answers   SubmissionAnswer[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @default(now()) @updatedAt
+}
+
+model SubmissionAnswer {
+  id           Int            @id @default(autoincrement())
+  question     Question       @relation(fields: [questionId], references: [id])
+  questionId   Int
+  option       QuestionOption @relation(fields: [optionId], references: [id])
+  optionId     Int
+  submission   Submission     @relation(fields: [submissionId], references: [id])
+  submissionId Int
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now()) @updatedAt
+
+  @@unique([questionId, submissionId])
 }

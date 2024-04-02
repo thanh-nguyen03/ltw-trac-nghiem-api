@@ -3,7 +3,7 @@ import {
   IsNotEmpty,
   IsNumber,
   IsString,
-  Max,
+  MaxLength,
 } from 'class-validator';
 
 export class QuestionOptionDto {
@@ -15,13 +15,9 @@ export class QuestionOptionDto {
 
   @IsString()
   @IsNotEmpty()
-  @Max(255)
+  @MaxLength(255)
   content: string;
 
   @IsBoolean()
   isCorrect: boolean;
-
-  @IsNumber()
-  @IsNotEmpty()
-  questionId: number;
 }
