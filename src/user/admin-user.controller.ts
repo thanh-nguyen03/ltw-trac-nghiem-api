@@ -10,8 +10,11 @@ import {
 import { UserService } from './user.service';
 import ResponseDto from '../common/constants/response.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
+import { IsRole } from '../common/decorators/role.decorator';
+import { Role } from '@prisma/client';
 
 @Controller('admin/users')
+@IsRole(Role.ADMIN)
 export class AdminUserController {
   constructor(private userService: UserService) {}
 

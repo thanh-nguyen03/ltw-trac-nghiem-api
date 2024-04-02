@@ -3,11 +3,12 @@ import { Contest } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Message } from '../common/constants/message';
-import { ContestQuestionInputDto } from './dtos/contest-question-input.dto';
+import { ContestQuestionDto } from './dtos/contest-question.dto';
 
 interface IContestService {
   findAll(): Promise<Contest[]>;
-  getContest(id: number): Promise<Contest>;
+  getContestForAdmin(id: number): Promise<Contest>;
+  getContestForUser(id: number): Promise<Contest>;
   createContest(createContestDto: ContestDto): Promise<Contest>;
   updateContest(
     contestId: number,
@@ -18,7 +19,7 @@ interface IContestService {
   // questions
   saveQuestions(
     contestId: number,
-    questions: ContestQuestionInputDto[],
+    questions: ContestQuestionDto[],
   ): Promise<Contest>;
 }
 
@@ -46,7 +47,7 @@ export class ContestService implements IContestService {
     contestId: number,
     updateContestDto: ContestDto,
   ): Promise<Contest> {
-    const contest = this.getContest(contestId);
+    const contest = this.getContestForAdmin(contestId);
 
     if (!contest) {
       throw new BadRequestException(Message.CONTEST_NOT_FOUND);
@@ -62,7 +63,7 @@ export class ContestService implements IContestService {
   }
 
   async deleteContest(contestId: number): Promise<Contest> {
-    const contest = this.getContest(contestId);
+    const contest = this.getContestForAdmin(contestId);
 
     if (!contest) {
       throw new BadRequestException(Message.CONTEST_NOT_FOUND);
@@ -82,21 +83,52 @@ export class ContestService implements IContestService {
     });
   }
 
-  async getContest(id: number): Promise<Contest> {
-    return this.prisma.contest.findUnique({
+  async getContestForAdmin(id: number): Promise<Contest> {
+    const contest = await this.prisma.contest.findUnique({
       where: { id },
       include: {
         author: true,
         questions: true,
       },
     });
+
+    if (!contest) {
+      throw new BadRequestException(Message.CONTEST_NOT_FOUND);
+    }
+
+    return contest;
+  }
+
+  async getContestForUser(id: number): Promise<Contest> {
+    const contest = await this.prisma.contest.findUnique({
+      where: { id },
+      include: {
+        questions: {
+          include: {
+            options: {
+              select: {
+                id: true,
+                number: true,
+                content: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!contest) {
+      throw new BadRequestException(Message.CONTEST_NOT_FOUND);
+    }
+
+    return contest;
   }
 
   async saveQuestions(
     contestId: number,
-    questions: ContestQuestionInputDto[],
+    questions: ContestQuestionDto[],
   ): Promise<Contest> {
-    const contest = await this.getContest(contestId);
+    const contest = await this.getContestForAdmin(contestId);
 
     if (!contest) {
       throw new BadRequestException(Message.CONTEST_NOT_FOUND);
