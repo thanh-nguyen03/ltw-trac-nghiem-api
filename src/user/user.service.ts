@@ -5,9 +5,10 @@ import { User } from '@prisma/client';
 import { RegisterRequestDto } from '../auth/dtos/register-request.dto';
 import { Message } from '../common/constants/message';
 import { UpdateUserDto } from './dtos/update-user.dto';
+import { UserFilter } from './constants/user-filter.query';
 
 interface IUserService {
-  getUsers(): Promise<User[]>;
+  getUsers(filter: UserFilter): Promise<User[]>;
   getUser(username: string): Promise<User | null>;
   createUser(data: RegisterRequestDto): Promise<void>;
   updateUser(useId: number, data: UpdateUserDto): Promise<User>;
@@ -18,8 +19,15 @@ interface IUserService {
 export class UserService implements IUserService {
   constructor(private prisma: PrismaService) {}
 
-  async getUsers() {
-    return this.prisma.user.findMany();
+  async getUsers(filter: UserFilter) {
+    const { query } = filter;
+    return this.prisma.user.findMany({
+      where: {
+        fullName: {
+          contains: query,
+        },
+      },
+    });
   }
 
   async getUser(username: string) {
