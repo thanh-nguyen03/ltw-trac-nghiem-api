@@ -14,7 +14,8 @@ import ResponseDto from '../common/constants/response.dto';
 import { ContestDto } from './dtos/contest.dto';
 import { ContestQuestionDto } from './dtos/contest-question.dto';
 import { IsRole } from '../common/decorators/role.decorator';
-import { Role } from '@prisma/client';
+import { Role, User } from '@prisma/client';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Controller('admin/contests')
 @IsRole(Role.ADMIN)
@@ -34,9 +35,12 @@ export class AdminContestController {
   }
 
   @Post()
-  async createContest(@Body() createContestDto: ContestDto) {
+  async createContest(
+    @Body() createContestDto: ContestDto,
+    @CurrentUser() user: User,
+  ) {
     return ResponseDto.successDefault(
-      await this.contestService.createContest(createContestDto),
+      await this.contestService.createContest(createContestDto, user.id),
     );
   }
 
@@ -58,13 +62,24 @@ export class AdminContestController {
   }
 
   @Post(':id/questions')
-  async addQuestions(
+  async addAndUpdateQuestions(
     @Param('id', ParseIntPipe) contestId: number,
     @Body(new ParseArrayPipe({ items: ContestQuestionDto }))
     questions: ContestQuestionDto[],
   ) {
     return ResponseDto.successDefault(
-      await this.contestService.saveQuestions(contestId, questions),
+      await this.contestService.addAndUpdateQuestions(contestId, questions),
+    );
+  }
+
+  @Delete(':id/questions')
+  async deleteQuestion(
+    @Param('id', ParseIntPipe) contestId: number,
+    @Body(new ParseArrayPipe({ items: Number }))
+    questionIds: number[],
+  ) {
+    return ResponseDto.successDefault(
+      await this.contestService.deleteQuestions(contestId, questionIds),
     );
   }
 }
