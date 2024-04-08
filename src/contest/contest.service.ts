@@ -4,9 +4,10 @@ import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Message } from '../common/constants/message';
 import { ContestQuestionDto } from './dtos/contest-question.dto';
+import { ContestFilter } from './constants/contest-filter.query';
 
 interface IContestService {
-  findAll(): Promise<Contest[]>;
+  findAll(filter: ContestFilter): Promise<Contest[]>;
   getContestForAdmin(id: number): Promise<Contest>;
   getContestForUser(id: number): Promise<Contest>;
   createContest(
@@ -108,15 +109,18 @@ export class ContestService implements IContestService {
     });
   }
 
-  async findAll(): Promise<Contest[]> {
+  async findAll(filter: ContestFilter): Promise<Contest[]> {
+    const { query, isFixTime } = filter;
+
     return this.prisma.contest.findMany({
+      where: {
+        name: {
+          contains: query,
+        },
+        isFixTime: isFixTime ? true : undefined,
+      },
       include: {
         author: true,
-        questions: {
-          include: {
-            options: true,
-          },
-        },
       },
     });
   }

@@ -135,6 +135,7 @@ export class SubmissionService implements ISubmissionService {
             description: true,
             isFixTime: true,
             startTime: true,
+            endTime: true,
             createdAt: true,
             updatedAt: true,
             questions: {

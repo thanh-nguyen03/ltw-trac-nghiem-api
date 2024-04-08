@@ -8,6 +8,7 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import { ContestService } from './contest.service';
 import ResponseDto from '../common/constants/response.dto';
@@ -16,6 +17,7 @@ import { ContestQuestionDto } from './dtos/contest-question.dto';
 import { IsRole } from '../common/decorators/role.decorator';
 import { Role, User } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { ContestFilter } from './constants/contest-filter.query';
 
 @Controller('admin/contests')
 @IsRole(Role.ADMIN)
@@ -23,8 +25,8 @@ export class AdminContestController {
   constructor(private contestService: ContestService) {}
 
   @Get()
-  async getContests() {
-    return ResponseDto.successDefault(await this.contestService.findAll());
+  async getContests(@Query() query: ContestFilter) {
+    return ResponseDto.successDefault(await this.contestService.findAll(query));
   }
 
   @Get(':id')
