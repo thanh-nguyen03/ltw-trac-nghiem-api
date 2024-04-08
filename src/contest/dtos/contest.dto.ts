@@ -1,31 +1,32 @@
 import {
   IsBoolean,
-  IsDate,
-  IsInt,
+  IsDateString,
   IsNotEmpty,
   IsOptional,
   IsString,
-  Max,
+  MaxLength,
 } from 'class-validator';
 export class ContestDto {
   @IsString()
   @IsNotEmpty()
-  @Max(255)
+  @MaxLength(255)
   name: string;
 
   @IsString()
   @IsNotEmpty()
-  @Max(2000)
+  @MaxLength(2000)
   description: string;
 
   @IsBoolean()
   isFixTime: boolean;
 
-  @IsDate()
+  @IsDateString()
   @IsOptional()
   startTime?: Date;
 
-  @IsInt()
-  @IsNotEmpty()
+  @IsDateString()
+  @IsOptional()
+  endTime?: Date;
+
   authorId: number;
 }

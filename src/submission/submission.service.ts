@@ -1,5 +1,9 @@
 import { PrismaService } from '../prisma/prisma.service';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateSubmissionDto } from './dtos/create-submission.dto';
 import { Submission } from '@prisma/client';
 import { Message } from '../common/constants/message';
@@ -10,6 +14,8 @@ interface ISubmissionService {
     userId: number,
     createSubmissionDto: CreateSubmissionDto,
   ): Promise<Submission>;
+  judgeSubmission(submission: Submission): Promise<Submission>;
+  findAllSubmissionByContest(contestId: number): Promise<Submission[]>;
 }
 
 @Injectable()
@@ -29,6 +35,33 @@ export class SubmissionService implements ISubmissionService {
 
     if (!user) {
       throw new NotFoundException(Message.USER_NOT_FOUND);
+    }
+
+    const contest = await this.prisma.contest.findUnique({
+      where: {
+        id: contestId,
+      },
+    });
+
+    if (!contest) {
+      throw new NotFoundException(Message.CONTEST_NOT_FOUND);
+    }
+
+    const { isFixTime } = contest;
+
+    if (isFixTime) {
+      // if the contest is a fix time contest, check if the contest is still running
+      const currentTime = new Date().getTime();
+      const startTime = new Date(contest.startTime).getTime();
+      const endTime = new Date(contest.endTime).getTime();
+
+      if (currentTime < startTime) {
+        throw new BadRequestException(Message.CONTEST_NOT_STARTED);
+      }
+
+      if (currentTime > endTime) {
+        throw new BadRequestException(Message.CONTEST_ENDED);
+      }
     }
 
     const submission = await this.prisma.submission.create({
@@ -55,7 +88,7 @@ export class SubmissionService implements ISubmissionService {
     return this.judgeSubmission(submission);
   }
 
-  private async judgeSubmission(submission: Submission): Promise<Submission> {
+  async judgeSubmission(submission: Submission): Promise<Submission> {
     // get all the answers of the submission
     const answers = await this.prisma.submissionAnswer.findMany({
       where: {
@@ -111,6 +144,14 @@ export class SubmissionService implements ISubmissionService {
             },
           },
         },
+      },
+    });
+  }
+
+  findAllSubmissionByContest(contestId: number): Promise<Submission[]> {
+    return this.prisma.submission.findMany({
+      where: {
+        contestId,
       },
     });
   }
