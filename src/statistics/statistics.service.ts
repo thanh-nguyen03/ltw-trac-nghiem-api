@@ -1,34 +1,101 @@
 import { OverviewStatisticsDto } from './dtos/overview-statistics.dto';
 import { Injectable } from '@nestjs/common';
 import { ContestStatisticsDto } from './dtos/contest-statistic.dto';
-import { ContestService } from '../contest/contest.service';
 import { SubmissionService } from '../submission/submission.service';
 import { UserContestStatisticDto } from './dtos/user-contest-statistic.dto';
-import { UserService } from '../user/user.service';
+import { Submission } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
 
 interface IStatisticsService {
   getOverviewStatistics(): Promise<OverviewStatisticsDto>;
   getContestStatistics(contestId: number): Promise<ContestStatisticsDto>;
-  getContestsByUser(fullName: string): Promise<UserContestStatisticDto[]>;
+  getContestsByUser(userId: number): Promise<UserContestStatisticDto[]>;
 }
 
 @Injectable()
 export class StatisticsService implements IStatisticsService {
   constructor(
-    private contestService: ContestService,
     private submissionService: SubmissionService,
-    private userService: UserService,
+    private prisma: PrismaService,
   ) {}
 
-  getOverviewStatistics(): Promise<OverviewStatisticsDto> {
-    return Promise.resolve(undefined);
+  async getOverviewStatistics(): Promise<OverviewStatisticsDto> {
+    const submissions = await this.submissionService.findAll();
+    return this.calculateSharedStatistics(submissions);
   }
 
-  getContestStatistics(contestId: number): Promise<ContestStatisticsDto> {
-    return Promise.resolve(undefined);
+  async getContestStatistics(contestId: number): Promise<ContestStatisticsDto> {
+    // same as getOverviewStatistics but only for a specific contest
+    const contestSubmissions =
+      await this.submissionService.findAllSubmissionByContest(contestId);
+
+    return this.calculateSharedStatistics(contestSubmissions);
   }
 
-  getContestsByUser(fullName: string): Promise<UserContestStatisticDto[]> {
-    return Promise.resolve([]);
+  async getContestsByUser(userId: number): Promise<UserContestStatisticDto[]> {
+    const submissions = await this.prisma.submission.findMany({
+      where: {
+        userId,
+      },
+      include: {
+        contest: true,
+      },
+    });
+
+    return submissions.map((submission) => ({
+      submissionId: submission.id,
+      contest: submission.contest,
+      score: submission.score,
+      isCompleted: submission.score !== null,
+      totalTime: submission.totalTime,
+      startTime: submission.createdAt,
+    }));
+  }
+
+  private calculateSharedStatistics(submissions: Submission[]) {
+    // count number of submissions completed (have final result)
+    const completedSubmissions = submissions.filter(
+      (submission) => submission.score !== null,
+    );
+
+    const totalSubmissions = submissions.length;
+    const totalCompletedSubmissions = completedSubmissions.length;
+    const completionPercentage = totalSubmissions
+      ? (totalCompletedSubmissions / totalSubmissions) * 100
+      : 0;
+    const averageScore =
+      totalCompletedSubmissions > 0
+        ? completedSubmissions.reduce(
+            (acc, submission) => acc + submission.score,
+            0,
+          ) / totalCompletedSubmissions
+        : 0;
+
+    const scoreDistribution = this.getScoreDistribution(completedSubmissions);
+
+    return {
+      totalSubmissions,
+      totalCompletedSubmissions,
+      completionPercentage,
+      averageScore,
+      scoreDistribution,
+    };
+  }
+
+  private getScoreDistribution(completedSubmissions: Submission[]): Array<{
+    score: number;
+    percentage: number;
+  }> {
+    const scoreDistribution = completedSubmissions.reduce((acc, submission) => {
+      const score = submission.score ?? 0;
+      acc[score] = acc[score] ? acc[score] + 1 : 1;
+      return acc;
+    }, {});
+
+    const totalSubmissions = completedSubmissions.length;
+    return Object.keys(scoreDistribution).map((score) => ({
+      score: parseInt(score, 10),
+      percentage: (scoreDistribution[score] / totalSubmissions) * 100,
+    }));
   }
 }

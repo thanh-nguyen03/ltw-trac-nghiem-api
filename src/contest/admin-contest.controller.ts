@@ -18,11 +18,15 @@ import { IsRole } from '../common/decorators/role.decorator';
 import { Role, User } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { ContestFilter } from './constants/contest-filter.query';
+import { SubmissionService } from '../submission/submission.service';
 
 @Controller('admin/contests')
 @IsRole(Role.ADMIN)
 export class AdminContestController {
-  constructor(private contestService: ContestService) {}
+  constructor(
+    private contestService: ContestService,
+    private submissionService: SubmissionService,
+  ) {}
 
   @Get()
   async getContests(@Query() query: ContestFilter) {
@@ -82,6 +86,15 @@ export class AdminContestController {
   ) {
     return ResponseDto.successDefault(
       await this.contestService.deleteQuestions(contestId, questionIds),
+    );
+  }
+
+  @Get('/submissions/:submissionId')
+  async adminGetSubmission(
+    @Param('submissionId', ParseIntPipe) submissionId: number,
+  ) {
+    return ResponseDto.successDefault(
+      await this.submissionService.adminGetSubmission(submissionId),
     );
   }
 }

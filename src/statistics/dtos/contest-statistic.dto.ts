@@ -1,8 +1,8 @@
 export class ContestStatisticsDto {
-  totalParticipants: number;
   totalSubmissions: number;
+  totalCompletedSubmissions: number;
   averageScore: number;
-  // score distribution percentage
+  completionPercentage: number;
   scoreDistribution: Array<{
     score: number;
     percentage: number;
