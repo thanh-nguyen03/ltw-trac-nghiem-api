@@ -28,22 +28,23 @@ export class ContestController {
   }
 
   @Get(':contestId')
-  async startContest(@Param('contestId', ParseIntPipe) contestId: number) {
+  async startContest(
+    @Param('contestId', ParseIntPipe) contestId: number,
+    @CurrentUser() user: User,
+  ) {
     return ResponseDto.successDefault(
-      await this.contestService.getContestForUser(contestId),
+      await this.contestService.startContest(contestId, user.id),
     );
   }
 
-  @Post('/:contestId/submit')
+  @Post('/submit/:submissionId')
   async createSubmission(
-    @Param('contestId', ParseIntPipe) contestId: number,
-    @CurrentUser() user: User,
+    @Param('submissionId', ParseIntPipe) submissionId: number,
     @Body() createSubmissionDto: CreateSubmissionDto,
   ) {
     return ResponseDto.successDefault(
-      await this.submissionService.createSubmission(
-        contestId,
-        user.id,
+      await this.submissionService.judgeSubmission(
+        submissionId,
         createSubmissionDto,
       ),
     );

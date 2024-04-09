@@ -9,12 +9,11 @@ import { Submission } from '@prisma/client';
 import { Message } from '../common/constants/message';
 
 interface ISubmissionService {
-  createSubmission(
-    contestId: number,
-    userId: number,
+  createSubmission(contestId: number, userId: number): Promise<Submission>;
+  judgeSubmission(
+    submissionId: number,
     createSubmissionDto: CreateSubmissionDto,
   ): Promise<Submission>;
-  judgeSubmission(submission: Submission): Promise<Submission>;
   findAllSubmissionByContest(contestId: number): Promise<Submission[]>;
 }
 
@@ -25,7 +24,6 @@ export class SubmissionService implements ISubmissionService {
   async createSubmission(
     contestId: number,
     userId: number,
-    createSubmissionDto: CreateSubmissionDto,
   ): Promise<Submission> {
     const user = await this.prisma.user.findUnique({
       where: {
@@ -64,7 +62,7 @@ export class SubmissionService implements ISubmissionService {
       }
     }
 
-    const submission = await this.prisma.submission.create({
+    return this.prisma.submission.create({
       data: {
         score: null,
         contest: {
@@ -77,23 +75,18 @@ export class SubmissionService implements ISubmissionService {
             id: userId,
           },
         },
-        answers: {
-          create: createSubmissionDto.answers,
-        },
-        totalTime: createSubmissionDto.totalTime,
       },
     });
-
-    // judge the submission
-    return this.judgeSubmission(submission);
   }
 
-  async judgeSubmission(submission: Submission): Promise<Submission> {
-    // get all the answers of the submission
-    const answers = await this.prisma.submissionAnswer.findMany({
-      where: {
-        submissionId: submission.id,
-      },
+  async judgeSubmission(
+    submissionId: number,
+    createSubmissionDto: CreateSubmissionDto,
+  ): Promise<Submission> {
+    const { answers, totalTime } = createSubmissionDto;
+
+    const submission = await this.prisma.submission.findUnique({
+      where: { id: submissionId },
     });
 
     // calculate the total score of the submission based on the answers compare to question option isCorrect field
@@ -117,6 +110,15 @@ export class SubmissionService implements ISubmissionService {
       },
       data: {
         score: totalScore,
+        answers: {
+          createMany: {
+            data: answers.map((answer) => ({
+              questionId: answer.questionId,
+              optionId: answer.optionId,
+            })),
+          },
+        },
+        totalTime,
       },
       include: {
         answers: {

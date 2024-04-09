@@ -5,11 +5,15 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Message } from '../common/constants/message';
 import { ContestQuestionDto } from './dtos/contest-question.dto';
 import { ContestFilter } from './constants/contest-filter.query';
+import { SubmissionService } from '../submission/submission.service';
 
 interface IContestService {
   findAll(filter: ContestFilter): Promise<Contest[]>;
   getContestForAdmin(id: number): Promise<Contest>;
-  getContestForUser(id: number): Promise<Contest>;
+  startContest(
+    id: number,
+    userId: number,
+  ): Promise<{ contest: Contest; submissionId: number }>;
   createContest(
     createContestDto: ContestDto,
     authorId: number,
@@ -31,7 +35,10 @@ interface IContestService {
 
 @Injectable()
 export class ContestService implements IContestService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private submissionService: SubmissionService,
+  ) {}
 
   async createContest(
     createContestDto: ContestDto,
@@ -145,7 +152,18 @@ export class ContestService implements IContestService {
     return contest;
   }
 
-  async getContestForUser(id: number): Promise<Contest> {
+  async startContest(
+    id: number,
+    userId: number,
+  ): Promise<{ contest: Contest; submissionId: number }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new BadRequestException(Message.USER_NOT_FOUND);
+    }
+
     const contest = await this.prisma.contest.findUnique({
       where: { id },
       include: {
@@ -167,7 +185,15 @@ export class ContestService implements IContestService {
       throw new BadRequestException(Message.CONTEST_NOT_FOUND);
     }
 
-    return contest;
+    const submission = await this.submissionService.createSubmission(
+      contest.id,
+      user.id,
+    );
+
+    return {
+      contest,
+      submissionId: submission.id,
+    };
   }
 
   async addAndUpdateQuestions(
