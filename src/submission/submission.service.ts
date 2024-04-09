@@ -14,7 +14,10 @@ interface ISubmissionService {
     submissionId: number,
     createSubmissionDto: CreateSubmissionDto,
   ): Promise<Submission>;
+  findAll(): Promise<Submission[]>;
   findAllSubmissionByContest(contestId: number): Promise<Submission[]>;
+  findAllByUser(userId: number): Promise<Submission[]>;
+  adminGetSubmission(submissionId: number): Promise<Submission>;
 }
 
 @Injectable()
@@ -155,6 +158,49 @@ export class SubmissionService implements ISubmissionService {
     return this.prisma.submission.findMany({
       where: {
         contestId,
+      },
+    });
+  }
+
+  findAll(): Promise<Submission[]> {
+    return this.prisma.submission.findMany();
+  }
+
+  findAllByUser(userId: number): Promise<Submission[]> {
+    return this.prisma.submission.findMany({
+      where: {
+        userId,
+      },
+      include: {
+        contest: true,
+      },
+    });
+  }
+
+  async adminGetSubmission(submissionId: number): Promise<Submission> {
+    return this.prisma.submission.findUnique({
+      where: {
+        id: submissionId,
+      },
+      include: {
+        answers: {
+          select: {
+            id: true,
+            questionId: true,
+            optionId: true,
+          },
+        },
+        user: true,
+        contest: {
+          include: {
+            author: true,
+            questions: {
+              include: {
+                options: true,
+              },
+            },
+          },
+        },
       },
     });
   }
