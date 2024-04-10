@@ -1,10 +1,11 @@
 import { OverviewStatisticsDto } from './dtos/overview-statistics.dto';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ContestStatisticsDto } from './dtos/contest-statistic.dto';
 import { SubmissionService } from '../submission/submission.service';
 import { UserContestStatisticDto } from './dtos/user-contest-statistic.dto';
 import { Submission } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { Message } from '../common/constants/message';
 
 interface IStatisticsService {
   getOverviewStatistics(): Promise<OverviewStatisticsDto>;
@@ -25,6 +26,16 @@ export class StatisticsService implements IStatisticsService {
   }
 
   async getContestStatistics(contestId: number): Promise<ContestStatisticsDto> {
+    const contest = await this.prisma.contest.findUnique({
+      where: {
+        id: contestId,
+      },
+    });
+
+    if (!contest) {
+      throw new NotFoundException(Message.CONTEST_NOT_FOUND);
+    }
+
     // same as getOverviewStatistics but only for a specific contest
     const contestSubmissions =
       await this.submissionService.findAllSubmissionByContest(contestId);
@@ -33,6 +44,16 @@ export class StatisticsService implements IStatisticsService {
   }
 
   async getContestsByUser(userId: number): Promise<UserContestStatisticDto[]> {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(Message.USER_NOT_FOUND);
+    }
+
     const submissions = await this.prisma.submission.findMany({
       where: {
         userId,
