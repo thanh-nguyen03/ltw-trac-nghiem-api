@@ -15,7 +15,7 @@ import { ContestService } from './contest.service';
 import ResponseDto from '../common/constants/response.dto';
 import { ContestFilter } from './constants/contest-filter.query';
 
-@Controller('contest')
+@Controller('contests')
 export class ContestController {
   constructor(
     private contestService: ContestService,
@@ -27,7 +27,26 @@ export class ContestController {
     return ResponseDto.successDefault(await this.contestService.findAll(query));
   }
 
-  @Get(':contestId')
+  @Get(':contestId/submissions')
+  async getUserSubmissionsInContest(
+    @Param('contestId', ParseIntPipe) contestId: number,
+    @CurrentUser() user: User,
+  ) {
+    return ResponseDto.successDefault(
+      await this.submissionService.findAllByUserAndContest(contestId, user.id),
+    );
+  }
+
+  @Get(':contestId/submissions/:submissionId')
+  async getSubmissionResult(
+    @Param('submissionId', ParseIntPipe) submissionId: number,
+  ) {
+    return ResponseDto.successDefault(
+      await this.submissionService.getSubmissionResult(submissionId),
+    );
+  }
+
+  @Post(':contestId')
   async startContest(
     @Param('contestId', ParseIntPipe) contestId: number,
     @CurrentUser() user: User,

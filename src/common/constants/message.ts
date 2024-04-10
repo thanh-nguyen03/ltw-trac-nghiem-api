@@ -3,6 +3,7 @@ export class Message {
   static readonly ERROR = 'Error';
 
   // Auth
+  static readonly WRONG_USERNAME_PASSWORD = 'Wrong username or password';
   static readonly INVALID_CREDENTIALS = 'Invalid credentials';
   static readonly INVALID_REFRESH_TOKEN = 'Invalid refresh token';
   static readonly USERNAME_TAKEN = 'Username is already taken';
@@ -11,8 +12,6 @@ export class Message {
 
   // Contest
   static readonly CONTEST_NOT_FOUND = 'Contest not found';
-  static readonly CONTEST_ALREADY_HAS_SUBMISSIONS =
-    'Contest already has submissions';
   static readonly CONTEST_TIME_INVALID = 'Contest time is invalid';
   static readonly CONTEST_TIME_REQUIRED =
     'Contest start time and end time is required for fix time contest';
@@ -30,4 +29,8 @@ export class Message {
   static readonly QUESTION_CANNOT_BE_ADDED_AFTER_START_TIME =
     'Cannot add question after contest has started';
   static readonly QUESTION_OPTION_NOT_FOUND = 'Question option not found';
+
+  // Submission
+  static readonly USER_DID_NOT_START_CONTEST = 'User did not start the contest';
+  static readonly SUBMISSION_NOT_FOUND = 'Submission not found';
 }

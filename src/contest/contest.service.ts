@@ -1,7 +1,11 @@
 import { ContestDto } from './dtos/contest.dto';
 import { Contest } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Message } from '../common/constants/message';
 import { ContestQuestionDto } from './dtos/contest-question.dto';
 import { ContestFilter } from './constants/contest-filter.query';
@@ -44,12 +48,15 @@ export class ContestService implements IContestService {
     createContestDto: ContestDto,
     authorId: number,
   ): Promise<Contest> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { authorId: _authorId, ...rest } = createContestDto;
+
     const author = await this.prisma.user.findUnique({
       where: { id: authorId },
     });
 
     if (!author) {
-      throw new BadRequestException(Message.USER_NOT_FOUND);
+      throw new NotFoundException(Message.USER_NOT_FOUND);
     }
 
     const { isFixTime } = createContestDto;
@@ -67,7 +74,10 @@ export class ContestService implements IContestService {
     }
 
     return this.prisma.contest.create({
-      data: createContestDto,
+      data: {
+        ...rest,
+        authorId,
+      },
     });
   }
 
@@ -75,10 +85,10 @@ export class ContestService implements IContestService {
     contestId: number,
     updateContestDto: ContestDto,
   ): Promise<Contest> {
-    const contest = this.getContestForAdmin(contestId);
+    const contest = await this.getContestForAdmin(contestId);
 
     if (!contest) {
-      throw new BadRequestException(Message.CONTEST_NOT_FOUND);
+      throw new NotFoundException(Message.CONTEST_NOT_FOUND);
     }
 
     const { isFixTime } = updateContestDto;
@@ -105,10 +115,10 @@ export class ContestService implements IContestService {
   }
 
   async deleteContest(contestId: number): Promise<Contest> {
-    const contest = this.getContestForAdmin(contestId);
+    const contest = await this.getContestForAdmin(contestId);
 
     if (!contest) {
-      throw new BadRequestException(Message.CONTEST_NOT_FOUND);
+      throw new NotFoundException(Message.CONTEST_NOT_FOUND);
     }
 
     return this.prisma.contest.delete({
@@ -139,14 +149,21 @@ export class ContestService implements IContestService {
         author: true,
         questions: {
           include: {
-            options: true,
+            options: {
+              orderBy: {
+                number: 'asc',
+              },
+            },
+          },
+          orderBy: {
+            number: 'asc',
           },
         },
       },
     });
 
     if (!contest) {
-      throw new BadRequestException(Message.CONTEST_NOT_FOUND);
+      throw new NotFoundException(Message.CONTEST_NOT_FOUND);
     }
 
     return contest;
@@ -161,7 +178,7 @@ export class ContestService implements IContestService {
     });
 
     if (!user) {
-      throw new BadRequestException(Message.USER_NOT_FOUND);
+      throw new NotFoundException(Message.USER_NOT_FOUND);
     }
 
     const contest = await this.prisma.contest.findUnique({
@@ -175,6 +192,9 @@ export class ContestService implements IContestService {
                 number: true,
                 content: true,
               },
+              orderBy: {
+                number: 'asc',
+              },
             },
           },
         },
@@ -182,7 +202,7 @@ export class ContestService implements IContestService {
     });
 
     if (!contest) {
-      throw new BadRequestException(Message.CONTEST_NOT_FOUND);
+      throw new NotFoundException(Message.CONTEST_NOT_FOUND);
     }
 
     const submission = await this.submissionService.createSubmission(
@@ -279,7 +299,7 @@ export class ContestService implements IContestService {
     });
 
     if (!contest) {
-      throw new BadRequestException(Message.CONTEST_NOT_FOUND);
+      throw new NotFoundException(Message.CONTEST_NOT_FOUND);
     }
 
     return this.prisma.contest.update({
@@ -345,13 +365,35 @@ export class ContestService implements IContestService {
        If question options id is provided, check if it exists
     */
     questions.forEach((question) => {
+      // Check if question number is unique
+      const existingQuestionNumber = existingQuestions.find(
+        (q) => q.number === question.number,
+      );
+
+      if (existingQuestionNumber) {
+        throw new BadRequestException(Message.QUESTIONS_NUMBER_INVALID);
+      }
+
+      // Check if question options number is unique
+      question.options.forEach((option) => {
+        const existingOptionNumber = question.options.find(
+          (o) => o.number === option.number,
+        );
+
+        if (existingOptionNumber) {
+          throw new BadRequestException(
+            Message.QUESTION_OPTIONS_NUMBER_INVALID,
+          );
+        }
+      });
+
       if (question.id) {
         const existingQuestion = existingQuestions.find(
           (q) => q.id === question.id,
         );
 
         if (!existingQuestion) {
-          throw new BadRequestException(Message.QUESTION_NOT_FOUND);
+          throw new NotFoundException(Message.QUESTION_NOT_FOUND);
         }
 
         question.options.forEach((option) => {
@@ -361,7 +403,7 @@ export class ContestService implements IContestService {
             );
 
             if (!existingOption) {
-              throw new BadRequestException(Message.QUESTION_OPTION_NOT_FOUND);
+              throw new NotFoundException(Message.QUESTION_OPTION_NOT_FOUND);
             }
           }
         });

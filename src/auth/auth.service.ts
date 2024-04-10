@@ -47,7 +47,7 @@ export class AuthService implements IAuthService {
     const user = await this.userService.getUser(username);
 
     if (!(user && bcrypt.compareSync(password, user.password))) {
-      throw new BadRequestException(Message.INVALID_CREDENTIALS);
+      throw new BadRequestException(Message.WRONG_USERNAME_PASSWORD);
     }
 
     return user;

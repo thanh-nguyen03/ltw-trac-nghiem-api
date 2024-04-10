@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Post,
   Put,
   Query,
 } from '@nestjs/common';
@@ -14,6 +15,7 @@ import { UpdateUserDto } from './dtos/update-user.dto';
 import { IsRole } from '../common/decorators/role.decorator';
 import { Role } from '@prisma/client';
 import { UserFilter } from './constants/user-filter.query';
+import { CreateUserDefaultDto } from './dtos/create-user-default.dto';
 
 @Controller('admin/users')
 @IsRole(Role.ADMIN)
@@ -23,6 +25,13 @@ export class AdminUserController {
   @Get()
   async getUsers(@Query() query: UserFilter) {
     return ResponseDto.successDefault(await this.userService.getUsers(query));
+  }
+
+  @Post()
+  async createMultipleUsers(@Body() data: CreateUserDefaultDto[]) {
+    return ResponseDto.successDefault(
+      await this.userService.createMultipleUsers(data),
+    );
   }
 
   @Put(':id')
